@@ -2,7 +2,7 @@
 
 However, the MAX30100 sensor is not a certified medical device; therefore, it must not be used under any circumstances to diagnose or test real medical conditions. Instead, it can be used for developing your own smartwatch, wristband, portable health products, simply for experimenting with microcontrollers. Although the MAX30100 provides a relatively simple data acquisition structure via the I2C protocol, this should not create the impression that accurate data can be obtained immediately. (In fact, this is the main reason I wanted to work with this sensor.) The raw data acquired from the sensor must go through several processing steps, and due to the sensor’s weak calibration capabilities, additional effort is required to obtain reliable results.
 
-Note: I used the board shown in the linked image (https://witcdn.robotistan.com/heart-rate-sensor-max30100-48144-66-B.jpg). This particular board has a hardware issue: the connection between the OUT of the 1.8V regulator and the sensor must be cut, and the resistor should instead be connected to the 3.3V regulator output.
+Note: I used the board shown in the linked image (https://witcdn.robotistan.com/heart-rate-sensor-max30100-48144-66-B.jpg). This particular board has a hardware issue: the connection between the OUT of the 1.8V regulator and the sensor must be cut, and the resistor should instead be connected to the 3.3V regulator output. This link for what we need to do to fix it(https://i.sstatic.net/6mYPn.jpg)
 
 First, we need to acquire raw data. To do this, we must properly initialize the sensor.
 
@@ -62,8 +62,7 @@ max30100 sensörü onaylı bir cihaz değildir, bu sebeple hiçbir koşulda ger�
 bilekliğini, taşınabilir sağlık ürününü ya da sadece işlemcilerle çalışma yapmak isteyen herkes için kullanılabilir. Max30100 sensörünün, I2C protokolü ile
 oldukça basit bir veri okuma yapısına sahip olması, sensörden doğru verinin hemen alınabileceği fikrini ortaya çıkarmamalı.(Neden bu sensörle uğraşmak istediğimin nedeni de bu) Sensörden alınan ham veriyi birçok aşamadan geçirmeli ve kalibrasyon yeteneği zayıf olan sensörün, doğru veriyi alması adına biraz uğraşmalısınız.
 
-NOT:Ben sensörün linki verilen görselde olan boardını kullanıyordum ve donanımsal olarak(https://witcdn.robotistan.com/heart-rate-sensor-max30100-48144-66-B.jpg)
-hatalı olan bu sensörü bize yakın olan ile 1.8V regülatördeki OUT arasındaki bağlantı koparılmalı ve direnci, 3.3V çıkış veren regülatöre bağlanmalı.
+NOT:Ben sensörün linki verilen görselde olan modelini(https://witcdn.robotistan.com/heart-rate-sensor-max30100-48144-66-B.jpg) kullanıyordum ve donanımsal olarak hatalı olan bu modelde 1.8V regülatördeki OUT pinine bağlı olan direnç ile arasındaki bağlantı koparılmalı ve direnci, 3.3V çıkış veren regülatöre bağlanmalı. Bu linkte nasıl bir düzenleme yapmanız gerektiği gösteriliyor(https://i.sstatic.net/6mYPn.jpg)
 
 İlk önce ham veriyi alacağız. Bunun için öncelikle doğru bir init yapmalıyız.
 
@@ -82,18 +81,18 @@ FIFO_DATA register üzerinden okunur. Bu register sabittir; burst read yapıldı
 örnek elde edilir. FIFO’daki sıradaki örneğe geçişi sensörün içindeki FIFO_RD_PTR sayacı otomatik yapar. Ölçüme başlamadan önce FIFO’nun temiz olması için 
 FIFO_WR_PTR, OVF_COUNTER ve FIFO_RD_PTR sıfırlanmalıdır.
 
-Sensörden okuduğumuz ve IR, RED adını verdiğimiz iki ham veriye, öncelikle DC Offset Removal uygulayacağız.
+Sensörden okuduğumuz, IR ve RED adını verdiğimiz iki ham veriye, öncelikle DC Offset Removal uygulayacağız.
 
 Bildiğiniz gibi sensörlerden alınan birçok sinyal(mikrofon, PPG, ivmeölçer, vb...) DC ve AC olmak üzere iki parçadan oluşur. DC bileşen ortamdan, akımdan, 
 aklınıza gelebilecek birçok faktörden oluşabilir ve sinyali bozar. AC bileşen ise bilgi kısmıdır. Sinyaller ile gönderilmek istenen bilgi genellikle bu 
 parçada gönderilir. 'DC Offset Removal' uygulamamızın sebebi de budur. Sinyaldeki offset den kurtulup, bilgi kaynağına ulaşmak. Max30100 sensörünün ham 
-verisi izlendiği zaman bir DC offset olduğu ve grafiğin hafifçe salındığını göreceksiniz. Bundan kurtulmamız gerekmektedir.
+verisi izlendiği zaman bir DC offset olduğu ve grafiğin hafifce salındığını göreceksiniz. Bundan kurtulmamız gerekmektedir.
 
 ```
 w(t) = x(t) + a * w(t-1)
 y(t) = w(t) - w(t-1)
 ```
-Bunun için üstte verilen IIR(Infinitive Impulse Response) kullanacağız. Bir sinyalin (DC + AC) bileşenlerinden oluştuğunu biliyoruz. Bu denklem sayesinde DC bileşen aynı olduğu sürece sonsuza doğru gidildikçe sistemin sonucu 0'a yaklaşacaktır ve AC(bilgi taşıyan) bileşen kalacaktır.  
+Bunun için üstte verilen IIR(Infinitive Impulse Response) kullanacağız. Bir sinyalin (DC + AC) bileşenlerinden oluştuğunu biliyoruz. Bu denklem sayesinde DC bileşen aynı olduğu sürece sonsuza doğru gidildikçe offset sıfıra yaklaşacaktır ve AC(bilgi taşıyan) bileşen kalacaktır.  
 
 ```
 int cnt = 0;
@@ -113,13 +112,13 @@ while (cnt < 300) {
 ```
 Filtrenin nasıl çalıştığını görmek isterseniz bu kodu çalıştırın. Giriş bileşeni sabit verilir. Sonunda sistem sonucu 0 olur ve sadece AC bileşen kalır.
 
-Elimizde DC offsetten arındırılmış bir sinyal kaldı. Şimdi 'Mean Median Filter' uygulayacağız. Bu filtre ile küçük dalgalanmalar zayıflar ve ani geçişler güçlenir. 'Mean Median Filter' mantığı, ortalama değerleri yumuşatması ve ani değişimleri/peak değerleri öne çıkarmasıdır. Gürültüyü de azaltır fakat yüksek frekanslı gürültüyü de arttırır. Bunun için daha sonrasında bir LPF(Low-pass-filter) veya BPF(Band-pass-filter) tasarlanabilir.
+Elimizde DC offsetten arındırılmış bir sinyal kaldı. Şimdi 'Mean Median Filter' uygulayacağız. Bu filtre ile küçük dalgalanmalar zayıflar ve ani geçişler güçlenir. 'Mean Median Filter' mantığı, ortalama değerleri yumuşatması ve ani değişimleri/peak değerleri öne çıkarmasıdır. Gürültüyü de azaltır fakat yüksek frekanslı gürültüyü arttırır. Bunun için daha sonrasında bir LPF(Low-pass-filter) veya BPF(Band-pass-filter) tasarlanabilir.
 
 Tasarlanan filtrelerden sonra artık temiz bir sensör verisine sahip olacağız. Bu işlemlerden sonra peak detection ve SpO2 hesaplaması yapılarak verileri 
-PC üzerinde grafiksel olarak gösterilebilir. Ancak ben sinyali okuyup filtrelerden geçirmeme rağmen görselleştirme aşamasında istediğim başarıyı elde edemedim. 
+PC üzerinde grafiksel olarak gösterilebilir. Ancak ben sinyali okuyup filtrelerden geçirmeme rağmen görselleştirme aşamasında istediğim başarıyı elde edemedim. Bunun sebebi filtrelemenin ve kalibrasyonu yetersiz yapmam olabilir.
 
 Her ne kadar bu süreçte birçok şey öğrenmiş olsam da, en son aşamada kesin ve doğru diyebileceğim bir görselleştirme elde edemedim. Bunun nedeni büyük 
-ihtimalle hem çalışmada faydalandığım kaynağın da belirttiği gibi sensörün kalibrasyon zorlukları olabilir. Projede verileri görşelleştirme ve iyileştirmek için neler yapmam gerektiğine bakacağım fakat şimdilik elimdeki .csv uzantılı veriyi kaydettiğim dosyayı paylaşacağım.
+ihtimalle hem çalışmada faydalandığım kaynağın da belirttiği gibi sensörün kalibrasyon zorlukları olabilir. Projede verileri görşelleştirmek ve iyileştirmek için neler yapmam gerektiğine bakacağım fakat şimdilik elimdeki .csv uzantılı veriyi kaydettiğim dosyayı paylaşacağım.
 
 Proje esnasında oldukça fazla faydalandığım kaynak : https://morf.lv/implementing-pulse-oximeter-using-max30100
 
