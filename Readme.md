@@ -11,14 +11,14 @@ hatalı olan bu sensörü bize yakın olan ile 1.8V regülatördeki OUT arasınd
 
 İlk önce ham veriyi alacağız. Bunun için öncelikle doğru bir init yapmalıyız.
 
-'''
+```
  ___________       ________       ________       ___________       ________
 |           |     |        |     |        |     |           |     |        |
 |  İşlemci  |---->|  Mode  |---->|  SpO2  |---->| LED Pulse |---->| Delete | 
 |  Reset    |     | Seçimi |     | Config |     |  Control  |     |  FIFO  |
 |___________|     |________|     |________|     |___________|     |________|
 
-'''
+```
 
 Initi yaptıktan sonra veriyi FIFO dan okumaya başlayabiliriz. Max30100 sensöründeki FIFO yapısı bize veriyi almamız için oldukça basit bir yapı sunmuştur.
 Bu yapıya göre : MAX30100, ölçüm verilerini 16 derinlikli FIFO’da saklar. Her örnek 4 byte’tan oluşur (2 byte Red + 2 byte IR). Veriler 0x05 adresindeki
@@ -33,14 +33,13 @@ aklınıza gelebilecek birçok faktörden oluşabilir ve sinyali bozar. AC bile�
 parçada gönderilir. 'DC Offset Removal' uygulamamızın sebebi de budur. Sinyaldeki offset den kurtulup, bilgi kaynağına ulaşmak. Max30100 sensörünün ham 
 verisi izlendiği zaman bir DC offset olduğu ve grafiğin hafifçe salındığını göreceksiniz. Bundan kurtulmamız gerekmektedir.
 
-'''
+```
 w(t) = x(t) + a * w(t-1)
 y(t) = w(t) - w(t-1)
-'''
-Bunun için üstte verilen IIR(Infinitive Impulse Response) kullanacağız. Bir sinyalin (DC + AC) bileşenlerinden oluştuğunu biliyoruz. Bu denklem sayesinde DC 
-bileşen aynı olduğu sürece sonsuza doğru gidildikçe sistemin sonucu 0'a yaklaşacaktır ve AC(bilgi taşıyan) bileşen kalacaktır.  
+```
+Bunun için üstte verilen IIR(Infinitive Impulse Response) kullanacağız. Bir sinyalin (DC + AC) bileşenlerinden oluştuğunu biliyoruz. Bu denklem sayesinde DC bileşen aynı olduğu sürece sonsuza doğru gidildikçe sistemin sonucu 0'a yaklaşacaktır ve AC(bilgi taşıyan) bileşen kalacaktır.  
 
-'''
+```
 int cnt = 0;
 float x = 894.0f;  //Rastgele bir giris degeri    
 float w = 0.0f;        
@@ -55,18 +54,16 @@ while (cnt < 300) {
     cnt++;
     printf("counter=%d, y=%f\n", cnt, y);
 }
-'''
+```
 Filtrenin nasıl çalıştığını görmek isterseniz bu kodu çalıştırın. Giriş bileşeni sabit verilir. Sonunda sistem sonucu 0 olur ve sadece AC bileşen kalır.
 
-Elimizde DC offsetten arındırılmış bir sinyal kaldı. Şimdi 'Mean Median Filter' uygulayacağız. Bu filtre ile küçük dalgalanmalar zayıflar ve ani geçişler 
-güçlenir. 'Mean Median Filter' mantığı, ortalama değerleri yumuşatması ve ani değişimleri/peak değerleri öne çıkarmasıdır. Gürültüyü de azaltır fakat yüksek 
-frekanslı gürültüyü de arttırır. Bunun için daha sonrasında bir LPF(Low-pass-filter) veya BPF(Band-pass-filter) tasarlanabilir.
+Elimizde DC offsetten arındırılmış bir sinyal kaldı. Şimdi 'Mean Median Filter' uygulayacağız. Bu filtre ile küçük dalgalanmalar zayıflar ve ani geçişler güçlenir. 'Mean Median Filter' mantığı, ortalama değerleri yumuşatması ve ani değişimleri/peak değerleri öne çıkarmasıdır. Gürültüyü de azaltır fakat yüksek frekanslı gürültüyü de arttırır. Bunun için daha sonrasında bir LPF(Low-pass-filter) veya BPF(Band-pass-filter) tasarlanabilir.
 
 Tasarlanan filtrelerden sonra artık temiz bir sensör verisine sahip olacağız. Bu işlemlerden sonra peak detection ve SpO2 hesaplaması yapılarak verileri 
 PC üzerinde grafiksel olarak gösterilebilir. Ancak ben sinyali okuyup filtrelerden geçirmeme rağmen görselleştirme aşamasında istediğim başarıyı elde edemedim. 
+
 Her ne kadar bu süreçte birçok şey öğrenmiş olsam da, en son aşamada kesin ve doğru diyebileceğim bir görselleştirme elde edemedim. Bunun nedeni büyük 
-ihtimalle hem çalışmada faydalandığım kaynağın da belirttiği gibi sensörün kalibrasyon zorlukları olabilir. Projede verileri görşelleştirme ve iyileştirmek için 
-neler yapmam gerektiğine bakacağım fakat şimdilik elimdeki .csv uzantılı veriyi kaydettiğim dosyayı paylaşacağım.
+ihtimalle hem çalışmada faydalandığım kaynağın da belirttiği gibi sensörün kalibrasyon zorlukları olabilir. Projede verileri görşelleştirme ve iyileştirmek için neler yapmam gerektiğine bakacağım fakat şimdilik elimdeki .csv uzantılı veriyi kaydettiğim dosyayı paylaşacağım.
 
 Not : Eğer USB device modunda bilgisayarınız USB yi tanımazsa STM32 ST-LINK Utility ile giriş yapın ve cihazı ST-LINK seçmesinden firmware update yapın.
 
