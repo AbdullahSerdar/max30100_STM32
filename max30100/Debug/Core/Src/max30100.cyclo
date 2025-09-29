@@ -1,0 +1,11 @@
+../Core/Src/max30100.c:13:6:MAX30100_WriteReg	1
+../Core/Src/max30100.c:24:9:MAX30100_ReadReg	1
+../Core/Src/max30100.c:37:6:Init_MAX30100	1
+../Core/Src/max30100.c:64:8:Check_MAX	1
+../Core/Src/max30100.c:72:7:read_tempMAX	1
+../Core/Src/max30100.c:84:10:Read_MAX30100	1
+../Core/Src/max30100.c:97:12:dcRemoval	1
+../Core/Src/max30100.c:106:7:MeanDiff	2
+../Core/Src/max30100.c:133:7:LowPassButterWorthFilter	1
+../Core/Src/max30100.c:154:6:detectPulse	13
+../Core/Src/max30100.c:247:6:balanceIntesities	6
