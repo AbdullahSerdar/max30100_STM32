@@ -54,7 +54,7 @@ Source I heavily relied on during this project: https://morf.lv/implementing-pul
 
 MAX30100 Datasheet: https://www.analog.com/media/en/technical-documentation/data-sheets/max30100.pdf
 
-Note:If your computer does not recognize the USB device in USB Device mode, enter via STM32 ST-LINK Utility and perform a firmware update by selecting the device as ST-LINK.
+Note: If your computer does not recognize the USB device in USB Device mode, enter via STM32 ST-LINK Utility and perform a firmware update by selecting the device as ST-LINK.
 
 [TR] max30100 sensörü, bir Pulse oksimetre ve kalp atış hızı sensör entegresidir. Oluşturacağınız yazılımlar ile kandaki oksijen miktarını ve kalp atış hızını hesaplayabilirsiniz.
 
