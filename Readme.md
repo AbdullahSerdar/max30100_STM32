@@ -1,4 +1,4 @@
-The MAX30100 sensor is an integrated pulse oximeter and heart rate sensor. With the software you develop, it is possible to calculate both the oxygen saturation level in the blood and the heart rate.
+[EN] The MAX30100 sensor is an integrated pulse oximeter and heart rate sensor. With the software you develop, it is possible to calculate both the oxygen saturation level in the blood and the heart rate.
 
 However, the MAX30100 sensor is not a certified medical device; therefore, it must not be used under any circumstances to diagnose or test real medical conditions. Instead, it can be used for developing your own smartwatch, wristband, portable health products, simply for experimenting with microcontrollers. Although the MAX30100 provides a relatively simple data acquisition structure via the I2C protocol, this should not create the impression that accurate data can be obtained immediately. (In fact, this is the main reason I wanted to work with this sensor.) The raw data acquired from the sensor must go through several processing steps, and due to the sensor’s weak calibration capabilities, additional effort is required to obtain reliable results.
 
