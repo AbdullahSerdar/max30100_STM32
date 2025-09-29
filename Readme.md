@@ -65,6 +65,9 @@ PC üzerinde grafiksel olarak gösterilebilir. Ancak ben sinyali okuyup filtrele
 Her ne kadar bu süreçte birçok şey öğrenmiş olsam da, en son aşamada kesin ve doğru diyebileceğim bir görselleştirme elde edemedim. Bunun nedeni büyük 
 ihtimalle hem çalışmada faydalandığım kaynağın da belirttiği gibi sensörün kalibrasyon zorlukları olabilir. Projede verileri görşelleştirme ve iyileştirmek için neler yapmam gerektiğine bakacağım fakat şimdilik elimdeki .csv uzantılı veriyi kaydettiğim dosyayı paylaşacağım.
 
+Proje esnasında oldukça fazla faydalandığım kaynak : https://morf.lv/implementing-pulse-oximeter-using-max30100
+Max30100 datasheet : https://www.analog.com/media/en/technical-documentation/data-sheets/max30100.pdf
+
 Not : Eğer USB device modunda bilgisayarınız USB yi tanımazsa STM32 ST-LINK Utility ile giriş yapın ve cihazı ST-LINK seçmesinden firmware update yapın.
 
 
