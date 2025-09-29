@@ -1,9 +1,4 @@
-/*
- * max30100.c
- *
- *  Created on: Sep 18, 2025
- *      Author: serda
- */
+
 
 #include "max30100.h"
 
@@ -192,7 +187,7 @@ bool detectPulse(float sensor_value)
 
 		float rawBPM = 0;
 		if(beatDuration > 0)
-		  rawBPM = 60000.0f / (float)beatDuration;  //0000 de olabilir
+		  rawBPM = 60000.0f / (float)beatDuration;
 
 		valuesBPM[bpmIndex] = rawBPM;
 		valuesBPMSum = 0;

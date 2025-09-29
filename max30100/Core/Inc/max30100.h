@@ -1,9 +1,4 @@
-/*
- * max30100.h
- *
- *  Created on: Sep 18, 2025
- *      Author: serda
- */
+
 
 #ifndef INC_MAX30100_H_
 #define INC_MAX30100_H_

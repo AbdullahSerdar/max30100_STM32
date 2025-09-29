@@ -1,9 +1,4 @@
-/*
- * lcd.c
- *
- *  Created on: Sep 18, 2025
- *      Author: serda
- */
+
 
 #include "lcd.h"
 
