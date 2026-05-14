@@ -1,0 +1,10 @@
+../Drivers/dev_max30100/src/max30_filter.c:65:14:clampf_local	24	static
+../Drivers/dev_max30100/src/max30_filter.c:72:14:one_pole_alpha	24	static
+../Drivers/dev_max30100/src/max30_filter.c:83:14:lpf_apply	16	static
+../Drivers/dev_max30100/src/max30_filter.c:89:13:bpm_push	16	static
+../Drivers/dev_max30100/src/max30_filter.c:109:6:Max30Filter_Init	16	static
+../Drivers/dev_max30100/src/max30_filter.c:132:6:Max30Filter_Reset	16	static
+../Drivers/dev_max30100/src/max30_filter.c:138:23:Max30Filter_GetLast	24	static
+../Drivers/dev_max30100/src/max30_filter.c:143:23:Max30Filter_Process	80	static
+../Drivers/dev_max30100/src/max30_filter.c:224:6:detectPulse	32	static
+../Drivers/dev_max30100/src/max30_filter.c:251:6:balanceIntesities	40	static

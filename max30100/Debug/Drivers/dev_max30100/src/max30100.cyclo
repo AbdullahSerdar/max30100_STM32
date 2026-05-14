@@ -1,0 +1,11 @@
+../Drivers/dev_max30100/src/max30100.c:12:22:hal_to_max_error	2
+../Drivers/dev_max30100/src/max30100.c:17:14:sample_rate_to_hz	9
+../Drivers/dev_max30100/src/max30100.c:32:22:write_reg	1
+../Drivers/dev_max30100/src/max30100.c:39:15:Init_MAX30100	12
+../Drivers/dev_max30100/src/max30100.c:78:15:Check_MAX30100	3
+../Drivers/dev_max30100/src/max30100.c:97:15:Read_MAX_Temp	2
+../Drivers/dev_max30100/src/max30100.c:112:15:Read_MAX_Ir_Red	2
+../Drivers/dev_max30100/src/max30100.c:127:15:MAX30100_ReadFiltered	3
+../Drivers/dev_max30100/src/max30100.c:144:10:MAX30100_GetRaw	1
+../Drivers/dev_max30100/src/max30100.c:149:8:MAX30100_GetTemperature	1
+../Drivers/dev_max30100/src/max30100.c:154:8:MAX30100_GetId	1

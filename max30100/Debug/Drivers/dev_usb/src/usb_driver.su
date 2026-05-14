@@ -1,0 +1,4 @@
+../Drivers/dev_usb/src/usb_driver.c:15:6:UsbDriver_Init	8	static
+../Drivers/dev_usb/src/usb_driver.c:25:20:UsbDriver_PublishMax30100	24	static
+../Drivers/dev_usb/src/usb_driver.c:52:20:UsbDriver_WaitAndCopyMax30100	24	static
+../Drivers/dev_usb/src/usb_driver.c:88:20:UsbDriver_SendMax30100Packet	272	static

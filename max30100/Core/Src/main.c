@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -18,15 +18,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "lcd.h"
 #include "max30100.h"
-#include "stdio.h"
-#include <math.h>
-#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,30 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-HAL_StatusTypeDef cnt;
-float temp;
 
-ID_MAX Max_id;
-raw_data raw_res;
-dcFilter_t acIR;
-dcFilter_t acRED;
-MD_data md_res;
-LPBWF_data lpbwf_res;
-
-meanDiffFilter_t mean_IRres;
-meanDiffFilter_t mean_REDres;
-
-butterworthFilter bwf_IRres;
-butterworthFilter bwf_REDres;
-
-uint32_t irACValueSqSum   = 0;
-uint32_t redACValueSqSum  = 0;
-uint16_t samplesRecorded  = 0;
-uint16_t pulsesDetected   = 0;
-uint32_t currentSPO2Value = 0;
-
-volatile uint32_t micsec = 0;
-char USB_buffer[128];
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,8 +42,13 @@ char USB_buffer[128];
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-I2C_HandleTypeDef hi2c2;
+I2C_HandleTypeDef hi2c1;
 
+osThreadId maxTaskHandle;
+osThreadId usbTaskHandle;
+osMutexId usbMutexHandle;
+osSemaphoreId usbSemaphoreHandle;
+/* USER CODE BEGIN PV */
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -77,7 +56,10 @@ I2C_HandleTypeDef hi2c2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2C2_Init(void);
+static void MX_I2C1_Init(void);
+void StartMaxTask(void const * argument);
+void StartUsbTask(void const * argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -115,14 +97,55 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C2_Init();
+  MX_I2C1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-//  Max_id = Check_MAX();
-  Init_MAX30100();
-//temp = read_tempMAX();
+
   /* USER CODE END 2 */
 
+  /* Create the mutex(es) */
+  /* definition and creation of usbMutex */
+  osMutexDef(usbMutex);
+  usbMutexHandle = osMutexCreate(osMutex(usbMutex));
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of usbSemaphore */
+  osSemaphoreDef(usbSemaphore);
+  usbSemaphoreHandle = osSemaphoreCreate(osSemaphore(usbSemaphore), 1);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of maxTask */
+  osThreadDef(maxTask, StartMaxTask, osPriorityNormal, 0, 256);
+  maxTaskHandle = osThreadCreate(osThread(maxTask), NULL);
+
+  /* definition and creation of usbTask */
+  osThreadDef(usbTask, StartUsbTask, osPriorityNormal, 0, 256);
+  usbTaskHandle = osThreadCreate(osThread(usbTask), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -130,56 +153,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  //Sensorden raw data aliniyor
-	  raw_res = Read_MAX30100();
-
-	  //DC offset filtresi uyguladigimiz sinyal, artık elimizde AC sinyal var
-	  acIR  = dcRemoval((float)raw_res.raw_IR, acIR.w);
-	  acRED = dcRemoval((float)raw_res.raw_RED, acRED.w);
-
-	  //Sinyale MeanDiffer filtresini uyguluyoruz
-	  md_res.md_IR  = MeanDiff(acIR.result, &mean_IRres);
-	  md_res.md_RED = MeanDiff(acRED.result, &mean_REDres);
-
-	  //Sinyale LPF uyguluyoruz
-	  lpbwf_res.lpbwf_IR  = LowPassButterWorthFilter(md_res.md_IR, &bwf_IRres);
-	  lpbwf_res.lpbwf_RED = LowPassButterWorthFilter(md_res.md_RED, &bwf_REDres);
-
-	  irACValueSqSum += acIR.result * acIR.result;
-	  redACValueSqSum += acRED.result * acRED.result;
-	  samplesRecorded++;
-
-	  if(detectPulse(lpbwf_res.lpbwf_IR) && samplesRecorded > 0)
-	  {
-		  pulsesDetected++;
-
-		  float red_log_rms = log( sqrt(redACValueSqSum/samplesRecorded) );
-		  float ir_log_rms = log( sqrt(irACValueSqSum/samplesRecorded) );
-		  float ratioRMS = 0.0f;
-		  if(red_log_rms != 0.0f && ir_log_rms != 0.0f)
-		  {
-			  ratioRMS = red_log_rms / ir_log_rms;
-		  }
-		  currentSPO2Value = 110.0 - 18.0 * ratioRMS;
-
-		  if(pulsesDetected % RESET_SPO2_EVERY_N_PULSES == 0)
-		  {
-			  irACValueSqSum  = 0;
-			  redACValueSqSum = 0;
-			  samplesRecorded = 0;
-		  }
-	  }
-
-	  int len = sprintf(USB_buffer,
-	                    "%d,%d,%f,%f,%f,%f,%u,%u\r\n",
-	                    raw_res.raw_IR, raw_res.raw_RED,
-	                    acIR.result, acRED.result,
-	                    md_res.md_IR, md_res.md_RED,
-	                    lpbwf_res.lpbwf_IR, lpbwf_res.lpbwf_RED);
-
-	  CDC_Transmit_FS((uint8_t*)USB_buffer, len);
-
-	  balanceIntesities(acIR.w, acRED.w);
   }
   /* USER CODE END 3 */
 }
@@ -230,36 +203,36 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief I2C2 Initialization Function
+  * @brief I2C1 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_I2C2_Init(void)
+static void MX_I2C1_Init(void)
 {
 
-  /* USER CODE BEGIN I2C2_Init 0 */
+  /* USER CODE BEGIN I2C1_Init 0 */
 
-  /* USER CODE END I2C2_Init 0 */
+  /* USER CODE END I2C1_Init 0 */
 
-  /* USER CODE BEGIN I2C2_Init 1 */
+  /* USER CODE BEGIN I2C1_Init 1 */
 
-  /* USER CODE END I2C2_Init 1 */
-  hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 100000;
-  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c2.Init.OwnAddress1 = 0;
-  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c2.Init.OwnAddress2 = 0;
-  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN I2C2_Init 2 */
+  /* USER CODE BEGIN I2C1_Init 2 */
 
-  /* USER CODE END I2C2_Init 2 */
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
@@ -270,28 +243,13 @@ static void MX_I2C2_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11
-                          |GPIO_PIN_12|GPIO_PIN_13, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PD8 PD9 PD10 PD11
-                           PD12 PD13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11
-                          |GPIO_PIN_12|GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -300,6 +258,27 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

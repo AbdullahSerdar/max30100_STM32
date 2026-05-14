@@ -1,11 +1,6 @@
-[EN] 'max30100_2025-09-29_16-38-17.csv', the file where the sensor data is recorded
+[EN] 'main.py', the script that provides data visualization
 
-'grafik.py', the script that provides data visualization
 
-'photo.png', the visualization of the data"
+[TR] 'main.py' verilerin görselleştirilmesini sağlayan yapı
 
-[TR] 'max30100_2025-09-29_16-38-17.csv' sensör verilerinin kayıtlı olduğu dosya
 
-'grafik.py' verilerin görselleştirilmesini sağlayan yapı
-
-'photo.png' verinin görselleştirilmesi
