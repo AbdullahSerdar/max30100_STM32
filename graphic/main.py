@@ -409,7 +409,7 @@ class MainWindow(QMainWindow):
         """
         self.bpm_card.set_value("-")
         self.spo2_card.set_value("-")
-        self.valid_card.set_value("NO FINGER")
+        self.valid_card.set_value("NO DETECT")
 
         self.x_data.clear()
         self.ir_data.clear()
